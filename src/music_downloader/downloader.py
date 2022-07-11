@@ -8,6 +8,8 @@ from vk_api import VkApi
 from vk_api.audio import VkAudio
 from Crypto.Cipher import AES
 from Crypto.Util.Padding import unpad
+from natsort import natsorted
+import re
 
 
 class Downloader:
@@ -20,34 +22,43 @@ class Downloader:
         )
         self._vk_session.auth()
 
-        self._vk_audio = VkAudio(self._vk_session)
+        self.vk_audio = VkAudio(self._vk_session)
 
-    async def download(self, search: str, user_id: str):
-        song = await self._get_song(search=search)
-        song_cover_link, song_url, song_name, song_duration = await self._get_song_info(raw_song=song)
+    async def download(self, song, user_id: str):
+        song_cover_link, song_url, song_name, song_duration, song_file_name, song_title, song_artist = await self._get_song_info(
+            raw_song=song)
         segments = await self._clean_segments_segments(segments=await self._get_song_segments(uri=song_url))
         segments_prefix = await self._download_song_by_segments(cleaned_segments=segments,
                                                                 m3u8_url=song_url,
                                                                 user_id=user_id)
         await self._compile_audio(prefix=segments_prefix)
-        await self._convert_ts_to_mp3(prefix=segments_prefix, song_name=song_name)
-        await self._download_cover(prefix=segments_prefix, song_name=song_name, cover_link=song_cover_link)
-        return song_cover_link, song_name, song_duration
+        await self._convert_ts_to_mp3(prefix=segments_prefix, song_name=song_file_name)
+        return song_cover_link, song_name, song_duration, segments_prefix, song_file_name, song_title, song_artist
 
-    async def _get_song(self, search):
+    async def get_song(self, search):
         try:
-            result = next(self._vk_audio.search_iter(q=search))
-        except vk_api.VkAudioException:
+            result = next(self.vk_audio.search_iter(q=search))
+        except StopIteration:
             return None
         return result
 
     @staticmethod
     async def _get_song_info(raw_song):
-        song_cover_link = raw_song['track_covers'][1]
+        try:
+            song_cover_link = raw_song['track_covers'][1]
+        except IndexError:
+            song_cover_link = None
         song_url = raw_song['url']
         song_name = raw_song['title'] + " " + raw_song['artist']
+        song_title = raw_song['title']
+        song_artist = raw_song['artist']
+        song_file_name_list = re.findall(r"\w+", song_name)
+        song_file_name = ""
+        for s in song_file_name_list:
+            song_file_name += s + " "
+        song_file_name.strip(" ")
         song_duration = raw_song['duration']
-        return song_cover_link, song_url, song_name, song_duration
+        return song_cover_link, song_url, song_name, song_duration, song_file_name, song_title, song_artist
 
     @staticmethod
     async def _get_song_segments(uri: str):
@@ -117,26 +128,23 @@ class Downloader:
     @staticmethod
     async def _compile_audio(prefix: str):
         segments_path = "media/music/segments/"
-        segments_file = os.listdir(segments_path)
+        segments_file = natsorted(os.listdir(segments_path))
         for file in segments_file:
-            f = open(f"{segments_path}/{file}", "rb").read()
-            open(f"media/music/mp3/{prefix}.ts", "ab").write(f)
-            try:
-                os.remove(f"{segments_path}/{file}")
-            except PermissionError:
-                async with time.sleep(5):
+            if prefix in file:
+                f = open(f"{segments_path}/{file}", "rb").read()
+                open(f"media/music/mp3/{prefix}.ts", "ab").write(f)
+                try:
                     os.remove(f"{segments_path}/{file}")
+                except PermissionError:
+                    pass
+            else:
+                continue
 
     @staticmethod
     async def _convert_ts_to_mp3(prefix: str, song_name: str):
-        os.system(f'ffmpeg -i "media/music/mp3/{prefix}.ts" "media/music/mp3/{song_name}_{prefix}.mp3"')
+        os.system(f'ffmpeg -i "media/music/mp3/{prefix}.ts" "media/music/mp3/{song_name}_{prefix}.wav"')
         try:
             os.remove(f"media/music/mp3/{prefix}.ts")
         except PermissionError:
             async with time.sleep(5):
                 os.remove(f"media/music/mp3/{prefix}.ts")
-
-    @staticmethod
-    async def _download_cover(prefix: str, song_name: str, cover_link: str):
-        response = requests.get(url=cover_link)
-        open(f"media/img/{song_name}_{prefix}.jpg", "wb").write(response.content)
