@@ -220,7 +220,8 @@ class Music(commands.Cog):
         if "http" in search:
             urls = await self._ad.get_songs(url=search)
             embed = discord.Embed(title="Добавление в очередь и перемешивание.",
-                                  description=f"Плейлист добавлен в очередь и случайно распределен!",
+                                  description=f"Плейлист добавлен в очередь и случайно распределен!\n"
+                                              f"Количество треков: {len(urls)}",
                                   color=discord.Color.green())
             np = await ctx.channel.send(embed=embed)
             await asyncio.sleep(10)
@@ -229,7 +230,12 @@ class Music(commands.Cog):
             for url in urls:
                 await player.queue.put(url)
         else:
-            await ctx.send("Это не плейлист чувак!")
+            embed = discord.Embed(title="Ошибочка...",
+                                  description=f"Это не плейлист чувак!",
+                                  color=discord.Color.green())
+            np = await ctx.channel.send(embed=embed)
+            await asyncio.sleep(10)
+            await np.delete()
 
         await self._garbage_collector()
         await ctx.message.delete()
@@ -265,7 +271,8 @@ class Music(commands.Cog):
         if "http" in search:
             urls = await self._ad.get_songs(url=search)
             embed = discord.Embed(title="Добавление в очередь.",
-                                  description=f"Плейлист добавлен в очередь!",
+                                  description=f"Плейлист добавлен в очередь!\n"
+                                              f"Количество треков: {len(urls)}",
                                   color=discord.Color.green())
             np = await ctx.channel.send(embed=embed)
             await asyncio.sleep(10)
@@ -277,7 +284,10 @@ class Music(commands.Cog):
             if url is not None:
                 await player.queue.put(await self._md.get_song(search=search))
                 embed = discord.Embed(title="Добавление в очередь.",
-                                      description=f"{search} добавлена в очередь!",
+                                      description=f"Исполнитель: {url['artist']}\n"
+                                                  f"Название: {url['title']}\n"
+                                                  f"Длительность: {datetime.timedelta(seconds=url['duration'])}\n"
+                                                  f"Добавлено в очередь!",
                                       color=discord.Color.green())
                 try:
                     embed.set_image(url=url['track_covers'][1])
