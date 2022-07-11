@@ -111,11 +111,6 @@ class MusicPlayer:
                 os.remove(f"media/music/mp3/{song_file_name}_{segments_prefix}.wav")
             except OSError:
                 pass
-            if song_cover_link is not None:
-                try:
-                    os.remove(f"media/img/{song_file_name}_{segments_prefix}.jpg")
-                except Exception:
-                    pass
             await self.np.delete()
 
     def destroy(self, guild):
@@ -241,12 +236,6 @@ class Music(commands.Cog):
 
     @staticmethod
     async def _garbage_collector():
-        img_files = os.listdir("media/img/")
-        for file in img_files:
-            try:
-                os.remove(f"media/img/{file}")
-            except PermissionError:
-                pass
         mp3_files = os.listdir("media/music/mp3/")
         for file in mp3_files:
             try:
@@ -378,16 +367,9 @@ class Music(commands.Cog):
         await self.cleanup(ctx.guild)
 
         mp3_files = os.listdir("media/music/mp3")
-        imgs = os.listdir("media/img")
         for file in mp3_files:
             try:
                 if ctx.author.id in file:
                     os.remove(f"media/music/mp3/{file}")
-            except Exception:
-                continue
-        for file in imgs:
-            try:
-                if ctx.author.id in file:
-                    os.remove(f"media/img/{file}")
             except Exception:
                 continue
