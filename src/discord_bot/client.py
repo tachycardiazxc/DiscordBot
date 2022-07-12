@@ -8,8 +8,9 @@ import asyncio
 import sys
 import traceback
 from async_timeout import timeout
-import datetime
+from cfg import DiscordCfg
 
+DISCORD_MESSAGE_DISAPPEAR_TIMER = DiscordCfg.DISCORD_MESSAGE_DISAPPEAR_TIMER
 
 class AlbumDownloader:
 
@@ -45,7 +46,7 @@ class MusicPlayer:
     """
 
     __slots__ = ('bot', '_guild', '_channel', '_cog',
-                 'queue', 'next', 'current', 'np', 'volume',
+                 'queue', 'next', 'current', 'np',
                  '_downloader', '_album_downloader',
                  'ctx')
 
@@ -64,7 +65,6 @@ class MusicPlayer:
         self.next = asyncio.Event()
 
         self.np = None  # Now playing message
-        self.volume = .5
         self.current = None
 
         ctx.bot.loop.create_task(self.player_loop())
@@ -92,11 +92,12 @@ class MusicPlayer:
                     source,
                     after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set)
                 )
-                embed = discord.Embed(title="Сейчас играет",
-                                      description=f"Исполнитель: {song_artist}\n"
-                                                  f"Название: {song_title}\n"
-                                                  f"Длительность: {datetime.timedelta(seconds=song_duration)}",
-                                      color=discord.Color.green())
+                embed_cfg = DiscordCfg.NowPlayingEmbed(song_artist=song_artist,
+                                                       song_title=song_title,
+                                                       song_duration=song_duration)
+                embed = discord.Embed(title=embed_cfg.TITLE,
+                                      description=embed_cfg.DESCRIPTION,
+                                      color=embed_cfg.COLOR)
                 if song_cover_link is not None:
                     embed.set_image(url=song_cover_link)
                 self.np = await self._channel.send(embed=embed)
@@ -184,10 +185,10 @@ class Music(commands.Cog):
             try:
                 channel = ctx.author.voice.channel
             except AttributeError:
-                embed = discord.Embed(title="",
-                                      description="Не могу найти канал для подключения."
-                                                  "Вызови `?join` находясь в канале.",
-                                      color=discord.Color.green())
+                embed_cfg = DiscordCfg.ConnectNotFoundEmbed()
+                embed = discord.Embed(title=embed_cfg.TITLE,
+                                      description=embed_cfg.DESCRIPTION,
+                                      color=embed_cfg.COLOR)
                 await ctx.send(embed=embed)
                 raise InvalidVoiceChannel('No channel to join. Please either specify a valid channel or join one.')
 
@@ -206,7 +207,7 @@ class Music(commands.Cog):
             except asyncio.TimeoutError:
                 raise VoiceConnectionError(f'Connecting to channel: <{channel}> timed out.')
 
-    @commands.command(name='shuffle', aliases=['s', 'Shuffle'], description="Plays music and shuffle it")
+    @commands.command(name='shuffle', aliases=['random', 'Shuffle', 'mix'], description="Plays music and shuffle it")
     async def shuffle_(self, ctx, *, search: str):
         await ctx.trigger_typing()
 
@@ -219,22 +220,23 @@ class Music(commands.Cog):
 
         if "http" in search:
             urls = await self._ad.get_songs(url=search)
-            embed = discord.Embed(title="Добавление в очередь и перемешивание.",
-                                  description=f"Плейлист добавлен в очередь и случайно распределен!\n"
-                                              f"Количество треков: {len(urls)}",
-                                  color=discord.Color.green())
+            embed_cfg = DiscordCfg.ShuffleOkEmbed(urls=urls)
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
             np = await ctx.channel.send(embed=embed)
-            await asyncio.sleep(10)
+            await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
             await np.delete()
             random.shuffle(urls)
             for url in urls:
                 await player.queue.put(url)
         else:
-            embed = discord.Embed(title="Ошибочка...",
-                                  description=f"Это не плейлист чувак!",
-                                  color=discord.Color.green())
+            embed_cfg = DiscordCfg.ShuffleErrorEmbed()
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
             np = await ctx.channel.send(embed=embed)
-            await asyncio.sleep(10)
+            await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
             await np.delete()
 
         await self._garbage_collector()
@@ -270,12 +272,12 @@ class Music(commands.Cog):
 
         if "http" in search:
             urls = await self._ad.get_songs(url=search)
-            embed = discord.Embed(title="Добавление в очередь.",
-                                  description=f"Плейлист добавлен в очередь!\n"
-                                              f"Количество треков: {len(urls)}",
-                                  color=discord.Color.green())
+            embed_cfg = DiscordCfg.PlayPlaylistEmbed(urls=urls)
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
             np = await ctx.channel.send(embed=embed)
-            await asyncio.sleep(10)
+            await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
             await np.delete()
             for url in urls:
                 await player.queue.put(url)
@@ -283,25 +285,24 @@ class Music(commands.Cog):
             url = await self._md.get_song(search=search)
             if url is not None:
                 await player.queue.put(await self._md.get_song(search=search))
-                embed = discord.Embed(title="Добавление в очередь.",
-                                      description=f"Исполнитель: {url['artist']}\n"
-                                                  f"Название: {url['title']}\n"
-                                                  f"Длительность: {datetime.timedelta(seconds=url['duration'])}\n"
-                                                  f"Добавлено в очередь!",
-                                      color=discord.Color.green())
+                embed_cfg = DiscordCfg.PlaySongEmbed(url=url)
+                embed = discord.Embed(title=embed_cfg.TITLE,
+                                      description=embed_cfg.DESCRIPTION,
+                                      color=embed_cfg.COLOR)
                 try:
                     embed.set_image(url=url['track_covers'][1])
                 except Exception:
                     pass
                 np = await ctx.channel.send(embed=embed)
-                await asyncio.sleep(10)
+                await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
                 await np.delete()
             else:
-                embed = discord.Embed(title="Ошибка при попытке найти песню или плейлист=(",
-                                      description=f"{search} эта штука не была найдена!(или я опять накосячил с кодом)",
-                                      color=discord.Color.green())
+                embed_cfg = DiscordCfg.PlayErrorEmbed(search=search)
+                embed = discord.Embed(title=embed_cfg.TITLE,
+                                      description=embed_cfg.DESCRIPTION,
+                                      color=embed_cfg.COLOR)
                 np = await ctx.channel.send(embed=embed)
-                await asyncio.sleep(10)
+                await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
                 await np.delete()
         await self._garbage_collector()
         await ctx.message.delete()
@@ -312,16 +313,19 @@ class Music(commands.Cog):
         vc = ctx.voice_client
 
         if not vc or not vc.is_playing():
-            embed = discord.Embed(title="", description="I am currently not playing anything",
-                                  color=discord.Color.green())
+            embed_cfg = DiscordCfg.PauseErrorEmbed()
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
             return await ctx.send(embed=embed)
         elif vc.is_paused():
             return
 
         vc.pause()
-        msg = await ctx.send("Останавливаю ⏸️")
+        msg_cfg = DiscordCfg.PauseCtxMessage()
+        msg = await ctx.send(msg_cfg.MESSAGE)
         await ctx.message.delete()
-        await asyncio.sleep(10)
+        await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
         await msg.delete()
 
     @commands.command(name='resume', description="resumes music")
@@ -330,26 +334,31 @@ class Music(commands.Cog):
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
-            embed = discord.Embed(title="", description="I'm not connected to a voice channel",
-                                  color=discord.Color.green())
+            embed_cfg = DiscordCfg.ResumeErrorEmbed()
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
             return await ctx.send(embed=embed)
         elif not vc.is_paused():
             return
 
         vc.resume()
-        msg = await ctx.send("Возобновляю ⏯️")
+        msg_cfg = DiscordCfg.ResumeCtxMessage()
+        msg = await ctx.send(msg_cfg.MESSAGE)
         await ctx.message.delete()
-        await asyncio.sleep(10)
+        await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
         await msg.delete()
 
-    @commands.command(name='skip', description="skips to next song in queue")
+    @commands.command(name='skip', aliases=['s', 'next'], description="skips to next song in queue")
     async def skip_(self, ctx):
         """Skip the song."""
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
-            embed = discord.Embed(title="", description="I'm not connected to a voice channel",
-                                  color=discord.Color.green())
+            embed_cfg = DiscordCfg.SkipErrorEmbed()
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
             return await ctx.send(embed=embed)
 
         if vc.is_paused():
@@ -369,8 +378,10 @@ class Music(commands.Cog):
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
-            embed = discord.Embed(title="", description="I'm not connected to a voice channel",
-                                  color=discord.Color.green())
+            embed_cfg = DiscordCfg.LeaveErrorEmbed()
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
             return await ctx.send(embed=embed)
 
         await ctx.message.delete()

@@ -1,5 +1,5 @@
 import os
-from cfg import API_LOGIN, API_PASSWORD, DISCORD_API_TOKEN
+from cfg import VKCfg, DiscordCfg
 from src.discord_bot.client import Music
 from discord.ext import commands
 
@@ -37,7 +37,7 @@ def preparation():
 
 
 def setup(bot_instance):
-    bot_instance.add_cog(Music(bot=bot_instance, login=API_LOGIN, password=API_PASSWORD))
+    bot_instance.add_cog(Music(bot=bot_instance, login=VKCfg.API_LOGIN, password=VKCfg.API_PASSWORD))
 
 
 if __name__ == "__main__":
@@ -46,9 +46,9 @@ if __name__ == "__main__":
     print("-" * 40)
     print("Starting and configuring the bot...")
 
-    os.environ["TOKEN"] = DISCORD_API_TOKEN
+    os.environ["TOKEN"] = DiscordCfg.DISCORD_API_TOKEN
 
-    bot = commands.Bot(command_prefix=commands.when_mentioned_or("?"))
+    bot = commands.Bot(command_prefix=commands.when_mentioned_or(DiscordCfg.COMMAND_PREFIX))
 
 
     @bot.event
