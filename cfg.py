@@ -1,21 +1,19 @@
 import datetime
 import discord
 
+
 # VK configuration
 
 
 class VKCfg:
-
     API_LOGIN = ""
     API_PASSWORD = ""
+
 
 # Discord configuration
 
 
 class DiscordCfg:
-
-    _false = False
-
     # API token
     DISCORD_API_TOKEN = ""
 
@@ -25,119 +23,109 @@ class DiscordCfg:
     # Command prefix
     COMMAND_PREFIX = "?"
 
-    if _false:
-        class NowPlayingEmbed:
 
-            _song_artist = str()
-            _song_title = str()
-            _song_duration = float()
+class NowPlayingEmbed:
+    TITLE = None
+    DESCRIPTION = None
+    COLOR = None
 
-            def __init__(self, song_artist, song_title, song_duration):
+    def __init__(self, song_artist, song_title, song_duration):
+        self.TITLE = "Сейчас играет"
+        self.DESCRIPTION = f"Исполнитель: {song_artist}\n" \
+                           f"Название: {song_title}\n" \
+                           f"Длительность: {datetime.timedelta(seconds=song_duration)}"
+        self.COLOR = discord.Color.green()
 
-                self._song_artist = song_artist
-                self._song_title = song_title
-                self._song_duration = song_duration
 
-            TITLE = "Сейчас играет"
-            DESCRIPTION = f"Исполнитель: {_song_artist}\n" \
-                          f"Название: {_song_title}\n" \
-                          f"Длительность: {datetime.timedelta(seconds=_song_duration)}"
-            COLOR = discord.Color.green()
+class ConnectNotFoundEmbed:
+    TITLE = ""
+    DESCRIPTION = "Не могу найти канал для подключения." \
+                  "Вызови `?join` находясь в канале."
+    COLOR = discord.Color.green()
 
-        class ConnectNotFoundEmbed:
 
-            TITLE = ""
-            DESCRIPTION = "Не могу найти канал для подключения." \
-                          "Вызови `?join` находясь в канале."
-            COLOR = discord.Color.green()
+class ShuffleOkEmbed:
+    TITLE = None
+    DESCRIPTION = None
+    COLOR = None
 
-        class ShuffleOkEmbed:
+    def __init__(self, urls):
+        self.TITLE = "Добавление в очередь и перемешивание."
+        self.DESCRIPTION = f"Плейлист добавлен в очередь и случайно распределен!\n" \
+                           f"Количество треков: {len(urls)}"
+        self.COLOR = discord.Color.green()
 
-            _urls = list()
 
-            def __init__(self, urls):
+class ShuffleErrorEmbed:
+    TITLE = "Ошибочка..."
+    DESCRIPTION = "Это не плейлист чувак!"
+    COLOR = discord.Color.green()
 
-                self._urls = urls
 
-            TITLE = "Добавление в очередь и перемешивание."
-            DESCRIPTION = f"Плейлист добавлен в очередь и случайно распределен!\n" \
-                          f"Количество треков: {len(_urls)}"
-            COLOR = discord.Color.green()
+class PlayPlaylistEmbed:
+    TITLE = None
+    DESCRIPTION = None
+    COLOR = None
 
-        class ShuffleErrorEmbed:
+    def __init__(self, urls):
+        self.TITLE = "Ошибочка..."
+        self.DESCRIPTION = f"Плейлист добавлен в очередь!\n" \
+                           f"Количество треков: {len(urls)}"
+        self.COLOR = discord.Color.green()
 
-            TITLE = "Ошибочка..."
-            DESCRIPTION = "Это не плейлист чувак!"
-            COLOR = discord.Color.green()
 
-        class PlayPlaylistEmbed:
+class PlaySongEmbed:
+    TITLE = None
+    DESCRIPTION = None
+    COLOR = None
 
-            _urls = list()
+    def __init__(self, url):
+        self.TITLE = "Добавление в очередь."
+        self.DESCRIPTION = f"Исполнитель: {url['artist']}\n" \
+                           f"Название: {url['title']}\n" \
+                           f"Длительность: {datetime.timedelta(seconds=url['duration'])}\n" \
+                           f"Добавлено в очередь!"
+        self.COLOR = discord.Color.green()
 
-            def __init__(self, urls):
 
-                self._urls = urls
+class PlayErrorEmbed:
+    TITLE = None
+    DESCRIPTION = None
+    COLOR = None
 
-            TITLE = "Ошибочка..."
-            DESCRIPTION = f"Плейлист добавлен в очередь!\n" \
-                          f"Количество треков: {len(_urls)}"
-            COLOR = discord.Color.green()
+    def __init__(self, search):
+        self.TITLE = "Ошибка при попытке найти песню или плейлист=("
+        self.DESCRIPTION = f"{search} эта штука не была найдена!(или я опять накосячил с кодом)"
+        self.COLOR = discord.Color.green()
 
-        class PlaySongEmbed:
 
-            _url = dict()
+class PauseErrorEmbed:
+    TITLE = ""
+    DESCRIPTION = "Я сейчас ничего не играю..."
+    COLOR = discord.Color.green()
 
-            def __init__(self, url):
 
-                self._url = url
+class PauseCtxMessage:
+    MESSAGE = "Останавливаю ⏸️"
 
-            TITLE = "Добавление в очередь."
-            DESCRIPTION = f"Исполнитель: {_url['artist']}\n" \
-                          f"Название: {_url['title']}\n" \
-                          f"Длительность: {datetime.timedelta(seconds=_url['duration'])}\n" \
-                          f"Добавлено в очередь!"
-            COLOR = discord.Color.green()
 
-        class PlayErrorEmbed:
+class ResumeErrorEmbed:
+    TITLE = ""
+    DESCRIPTION = "Я не нахожусь в канале..."
+    COLOR = discord.Color.green()
 
-            _search = str()
 
-            def __init__(self, search):
+class ResumeCtxMessage:
+    MESSAGE = "Возобновляю ⏯️"
 
-                self._search = search
 
-            TITLE = "Ошибка при попытке найти песню или плейлист=("
-            DESCRIPTION = f"{_search} эта штука не была найдена!(или я опять накосячил с кодом)"
-            COLOR = discord.Color.green()
+class SkipErrorEmbed:
+    TITLE = ""
+    DESCRIPTION = "Я не нахожусь в канале..."
+    COLOR = discord.Color.green()
 
-        class PauseErrorEmbed:
 
-            TITLE = ""
-            DESCRIPTION = "Я сейчас ничего не играю..."
-            COLOR = discord.Color.green()
-
-        class PauseCtxMessage:
-
-            MESSAGE = "Останавливаю ⏸️"
-
-        class ResumeErrorEmbed:
-
-            TITLE = ""
-            DESCRIPTION = "Я не нахожусь в канале..."
-            COLOR = discord.Color.green()
-
-        class ResumeCtxMessage:
-
-            MESSAGE = "Возобновляю ⏯️"
-
-        class SkipErrorEmbed:
-
-            TITLE = ""
-            DESCRIPTION = "Я не нахожусь в канале..."
-            COLOR = discord.Color.green()
-
-        class LeaveErrorEmbed:
-
-            TITLE = ""
-            DESCRIPTION = "Я не нахожусь в канале..."
-            COLOR = discord.Color.green()
+class LeaveErrorEmbed:
+    TITLE = ""
+    DESCRIPTION = "Я не нахожусь в канале..."
+    COLOR = discord.Color.green()

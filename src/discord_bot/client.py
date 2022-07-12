@@ -8,9 +8,12 @@ import asyncio
 import sys
 import traceback
 from async_timeout import timeout
-from cfg import DiscordCfg
+from cfg import DiscordCfg, NowPlayingEmbed, ConnectNotFoundEmbed, ShuffleOkEmbed, ShuffleErrorEmbed, \
+    PlayPlaylistEmbed, PlaySongEmbed, PlayErrorEmbed, PauseErrorEmbed, PauseCtxMessage, ResumeErrorEmbed, \
+    ResumeCtxMessage, SkipErrorEmbed, LeaveErrorEmbed
 
 DISCORD_MESSAGE_DISAPPEAR_TIMER = DiscordCfg.DISCORD_MESSAGE_DISAPPEAR_TIMER
+
 
 class AlbumDownloader:
 
@@ -92,14 +95,14 @@ class MusicPlayer:
                     source,
                     after=lambda _: self.bot.loop.call_soon_threadsafe(self.next.set)
                 )
-                embed_cfg = DiscordCfg.NowPlayingEmbed(song_artist=song_artist,
-                                                       song_title=song_title,
-                                                       song_duration=song_duration)
+                embed_cfg = NowPlayingEmbed(song_artist=song_artist,
+                                            song_title=song_title,
+                                            song_duration=song_duration)
                 embed = discord.Embed(title=embed_cfg.TITLE,
                                       description=embed_cfg.DESCRIPTION,
                                       color=embed_cfg.COLOR)
                 if song_cover_link is not None:
-                    embed.set_image(url=song_cover_link)
+                    embed.set_thumbnail(url=song_cover_link)
                 self.np = await self._channel.send(embed=embed)
             except AttributeError:
                 pass
@@ -185,7 +188,7 @@ class Music(commands.Cog):
             try:
                 channel = ctx.author.voice.channel
             except AttributeError:
-                embed_cfg = DiscordCfg.ConnectNotFoundEmbed()
+                embed_cfg = ConnectNotFoundEmbed()
                 embed = discord.Embed(title=embed_cfg.TITLE,
                                       description=embed_cfg.DESCRIPTION,
                                       color=embed_cfg.COLOR)
@@ -220,7 +223,7 @@ class Music(commands.Cog):
 
         if "http" in search:
             urls = await self._ad.get_songs(url=search)
-            embed_cfg = DiscordCfg.ShuffleOkEmbed(urls=urls)
+            embed_cfg = ShuffleOkEmbed(urls=urls)
             embed = discord.Embed(title=embed_cfg.TITLE,
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
@@ -231,7 +234,7 @@ class Music(commands.Cog):
             for url in urls:
                 await player.queue.put(url)
         else:
-            embed_cfg = DiscordCfg.ShuffleErrorEmbed()
+            embed_cfg = ShuffleErrorEmbed()
             embed = discord.Embed(title=embed_cfg.TITLE,
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
@@ -272,7 +275,7 @@ class Music(commands.Cog):
 
         if "http" in search:
             urls = await self._ad.get_songs(url=search)
-            embed_cfg = DiscordCfg.PlayPlaylistEmbed(urls=urls)
+            embed_cfg = PlayPlaylistEmbed(urls=urls)
             embed = discord.Embed(title=embed_cfg.TITLE,
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
@@ -285,19 +288,19 @@ class Music(commands.Cog):
             url = await self._md.get_song(search=search)
             if url is not None:
                 await player.queue.put(await self._md.get_song(search=search))
-                embed_cfg = DiscordCfg.PlaySongEmbed(url=url)
+                embed_cfg = PlaySongEmbed(url=url)
                 embed = discord.Embed(title=embed_cfg.TITLE,
                                       description=embed_cfg.DESCRIPTION,
                                       color=embed_cfg.COLOR)
                 try:
-                    embed.set_image(url=url['track_covers'][1])
+                    embed.set_thumbnail(url=url['track_covers'][1])
                 except Exception:
                     pass
                 np = await ctx.channel.send(embed=embed)
                 await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
                 await np.delete()
             else:
-                embed_cfg = DiscordCfg.PlayErrorEmbed(search=search)
+                embed_cfg = PlayErrorEmbed(search=search)
                 embed = discord.Embed(title=embed_cfg.TITLE,
                                       description=embed_cfg.DESCRIPTION,
                                       color=embed_cfg.COLOR)
@@ -313,7 +316,7 @@ class Music(commands.Cog):
         vc = ctx.voice_client
 
         if not vc or not vc.is_playing():
-            embed_cfg = DiscordCfg.PauseErrorEmbed()
+            embed_cfg = PauseErrorEmbed()
             embed = discord.Embed(title=embed_cfg.TITLE,
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
@@ -322,7 +325,7 @@ class Music(commands.Cog):
             return
 
         vc.pause()
-        msg_cfg = DiscordCfg.PauseCtxMessage()
+        msg_cfg = PauseCtxMessage()
         msg = await ctx.send(msg_cfg.MESSAGE)
         await ctx.message.delete()
         await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
@@ -334,7 +337,7 @@ class Music(commands.Cog):
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
-            embed_cfg = DiscordCfg.ResumeErrorEmbed()
+            embed_cfg = ResumeErrorEmbed()
             embed = discord.Embed(title=embed_cfg.TITLE,
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
@@ -343,7 +346,7 @@ class Music(commands.Cog):
             return
 
         vc.resume()
-        msg_cfg = DiscordCfg.ResumeCtxMessage()
+        msg_cfg = ResumeCtxMessage()
         msg = await ctx.send(msg_cfg.MESSAGE)
         await ctx.message.delete()
         await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
@@ -355,7 +358,7 @@ class Music(commands.Cog):
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
-            embed_cfg = DiscordCfg.SkipErrorEmbed()
+            embed_cfg = SkipErrorEmbed()
             embed = discord.Embed(title=embed_cfg.TITLE,
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
@@ -378,7 +381,7 @@ class Music(commands.Cog):
         vc = ctx.voice_client
 
         if not vc or not vc.is_connected():
-            embed_cfg = DiscordCfg.LeaveErrorEmbed()
+            embed_cfg = LeaveErrorEmbed()
             embed = discord.Embed(title=embed_cfg.TITLE,
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
