@@ -228,11 +228,11 @@ class Music(commands.Cog):
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
             np = await ctx.channel.send(embed=embed)
-            await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
-            await np.delete()
             random.shuffle(urls)
             for url in urls:
                 await player.queue.put(url)
+            await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
+            await np.delete()
         else:
             embed_cfg = ShuffleErrorEmbed()
             embed = discord.Embed(title=embed_cfg.TITLE,
@@ -280,10 +280,10 @@ class Music(commands.Cog):
                                   description=embed_cfg.DESCRIPTION,
                                   color=embed_cfg.COLOR)
             np = await ctx.channel.send(embed=embed)
-            await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
-            await np.delete()
             for url in urls:
                 await player.queue.put(url)
+            await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
+            await np.delete()
         else:
             url = await self._md.get_song(search=search)
             if url is not None:
