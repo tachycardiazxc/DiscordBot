@@ -323,8 +323,6 @@ class Music(commands.Cog):
                 except Exception:
                     pass
                 np = await ctx.channel.send(embed=embed)
-                await np.add_reaction("1️⃣")
-                np = await np.channel.fetch_message(np.id)
                 await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
                 await np.delete()
             else:
