@@ -129,3 +129,33 @@ class LeaveErrorEmbed:
     TITLE = ""
     DESCRIPTION = "Я не нахожусь в канале..."
     COLOR = discord.Color.green()
+
+
+class ChooseSongEmbed:
+    TITLE = None
+    DESCRIPTION = None
+    COLOR = None
+
+    def __init__(self, urls):
+        self.urls = urls
+
+        self.TITLE = "Выберите наиболее подходящий трек:"
+        self.DESCRIPTION = self._form_description()
+        self.COLOR = discord.Color.green()
+
+    def _form_description(self):
+        description = ""
+        k = 1
+        for url in self.urls:
+            description += f"{k}: {url['artist']} |" \
+                           f" {url['title']} |" \
+                           f" {datetime.timedelta(seconds=url['duration'])}\n"
+            k += 1
+        description = description.strip("\n")
+        return description
+
+
+class SongNotChosenError:
+    TITLE = ""
+    DESCRIPTION = "Вы не выбрали ни одну из песен"
+    COLOR = discord.Color.green()

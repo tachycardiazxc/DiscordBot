@@ -10,7 +10,7 @@ import traceback
 from async_timeout import timeout
 from cfg import DiscordCfg, NowPlayingEmbed, ConnectNotFoundEmbed, ShuffleOkEmbed, ShuffleErrorEmbed, \
     PlayPlaylistEmbed, PlaySongEmbed, PlayErrorEmbed, PauseErrorEmbed, PauseCtxMessage, ResumeErrorEmbed, \
-    ResumeCtxMessage, SkipErrorEmbed, LeaveErrorEmbed
+    ResumeCtxMessage, SkipErrorEmbed, LeaveErrorEmbed, ChooseSongEmbed, SongNotChosenError
 
 DISCORD_MESSAGE_DISAPPEAR_TIMER = DiscordCfg.DISCORD_MESSAGE_DISAPPEAR_TIMER
 
@@ -286,8 +286,34 @@ class Music(commands.Cog):
             await np.delete()
         else:
             url = await self._md.get_song(search=search)
+
+            _url = []
+            for _ in url:
+                _url.append(_)
+            embed_cfg = ChooseSongEmbed(urls=_url)
+            embed = discord.Embed(title=embed_cfg.TITLE,
+                                  description=embed_cfg.DESCRIPTION,
+                                  color=embed_cfg.COLOR)
+            np = await ctx.channel.send(embed=embed)
+            reactions_dict = {"1️⃣": 0, "2️⃣": 1, "3️⃣": 2, "4️⃣": 3, "5️⃣": 4}
+            for reaction in reactions_dict:
+                await np.add_reaction(reaction)
+            user_choice = await self._check_reactions(message=np, to=15)
+            await np.delete()
+            if user_choice is not None:
+                chosen_song = reactions_dict.get(user_choice)
+                url = _url[chosen_song]
+            else:
+                embed_cfg = SongNotChosenError()
+                embed = discord.Embed(title=embed_cfg.TITLE,
+                                      description=embed_cfg.DESCRIPTION,
+                                      color=embed_cfg.COLOR)
+                np = await ctx.channel.send(embed=embed)
+                await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
+                await np.delete()
+
             if url is not None:
-                await player.queue.put(await self._md.get_song(search=search))
+                await player.queue.put(url)
                 embed_cfg = PlaySongEmbed(url=url)
                 embed = discord.Embed(title=embed_cfg.TITLE,
                                       description=embed_cfg.DESCRIPTION,
@@ -297,6 +323,8 @@ class Music(commands.Cog):
                 except Exception:
                     pass
                 np = await ctx.channel.send(embed=embed)
+                await np.add_reaction("1️⃣")
+                np = await np.channel.fetch_message(np.id)
                 await asyncio.sleep(DISCORD_MESSAGE_DISAPPEAR_TIMER)
                 await np.delete()
             else:
@@ -309,6 +337,20 @@ class Music(commands.Cog):
                 await np.delete()
         await self._garbage_collector()
         await ctx.message.delete()
+
+    @staticmethod
+    async def _check_reactions(message, to):
+        try:
+            async with timeout(to):
+
+                while True:
+                    message = await message.channel.fetch_message(message.id)
+                    reactions = message.reactions
+                    for reaction in reactions:
+                        if reaction.count > 1:
+                            return reaction.emoji
+        except asyncio.TimeoutError:
+            return None
 
     @commands.command(name='pause', description="pauses music")
     async def pause_(self, ctx):

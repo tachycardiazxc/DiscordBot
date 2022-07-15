@@ -37,7 +37,7 @@ class Downloader:
 
     async def get_song(self, search):
         try:
-            result = next(self.vk_audio.search_iter(q=search))
+            result = self.vk_audio.search(q=search, count=5)
         except StopIteration:
             return None
         return result
