@@ -22,9 +22,11 @@ class AlbumDownloader:
 
     @staticmethod
     async def _re_url(url: str):
-        re_found = re.findall(r'[0-9]+', url)
-        user_id = re_found[1]
-        album_id = re_found[2]
+        re_found = re.findall(r'.[0-9]+_[0-9]+', url)[0]
+        if re_found[0] != "-":
+            re_found = re_found.strip(re_found[0])
+        user_id = re_found.split("_")[0]
+        album_id = re_found.split("_")[1]
         return user_id, album_id
 
     async def get_songs(self, url: str):
@@ -298,7 +300,7 @@ class Music(commands.Cog):
             reactions_dict = {"1️⃣": 0, "2️⃣": 1, "3️⃣": 2, "4️⃣": 3, "5️⃣": 4}
             for reaction in reactions_dict:
                 await np.add_reaction(reaction)
-            user_choice = await self._check_reactions(message=np, to=15)
+            user_choice = await self._check_reactions(message=np, to=30)
             await np.delete()
             if user_choice is not None:
                 chosen_song = reactions_dict.get(user_choice)
