@@ -34,6 +34,7 @@ python main.py
 <h3 align="center">Features</h3>
 
 * `?play` command working with VK albums or search
+* if `?play` command used as a search it will provide you 5 variants if songs that you are able to choose
 * Common commands such as `?skip`, `?leave`, `?pause` and others
 * `?shuffle` command that shuffles a given album
 
