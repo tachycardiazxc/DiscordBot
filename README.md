@@ -51,4 +51,4 @@ python main.py
 
 * Add commands that allow to play random albums by genre like `?phonk`, `?hyprepop` and others
 
-You can also request a feature, and I'll try to make it or you help me with it.
+You can also request a feature, and I'll try to make it, or you can help me with it.
