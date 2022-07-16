@@ -89,9 +89,9 @@ class MusicPlayer:
                 return self.destroy(self._guild)
 
             self.current = source
-            song_cover_link, song_name, song_duration, segments_prefix, song_file_name, song_title, song_artist = await self._downloader.download(
+            song_cover_link, song_name, song_duration, segments_suffix, song_file_name, song_title, song_artist = await self._downloader.download(
                 song=source, user_id=str(self.ctx.author.id))
-            source = discord.FFmpegPCMAudio(f"media/music/mp3/{song_file_name}_{segments_prefix}.wav", )
+            source = discord.FFmpegPCMAudio(f"media/music/mp3/{song_file_name}_{segments_suffix}.wav", )
             try:
                 self._guild.voice_client.play(
                     source,
@@ -114,7 +114,7 @@ class MusicPlayer:
             source.cleanup()
             self.current = None
             try:
-                os.remove(f"media/music/mp3/{song_file_name}_{segments_prefix}.wav")
+                os.remove(f"media/music/mp3/{song_file_name}_{segments_suffix}.wav")
             except OSError:
                 pass
             await self.np.delete()
