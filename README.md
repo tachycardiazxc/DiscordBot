@@ -34,7 +34,7 @@ python main.py
 <h3 align="center">Features</h3>
 
 * `?play` command working with VK albums or search
-* if `?play` command used as a search it will provide you 5 variants if songs that you are able to choose
+* if `?play` command used as a search it will provide you 5 variants of songs that you are able to choose
 * Common commands such as `?skip`, `?leave`, `?pause` and others
 * `?shuffle` command that shuffles a given album
 
@@ -42,7 +42,6 @@ python main.py
 
 <h3 align="center">Known issues</h3>
 
-* The regular expression that works with album url cannot recognize all possible albums url
 * After `?leave` command the bot leaves, but still tries to play next queued song, what leads to forever stored .wav file of next song, so if you use that bot and care about your storage space I recommend you to restart the bot sometimes, until I fix it(or you can help me with that), after restart and first `?play` use the mp3 folder removes all garbage
 * Some unnecessary issues such as shitty code(try except blocks that catching `Exception` instead of real possible exceptions) 
 
